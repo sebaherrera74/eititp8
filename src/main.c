@@ -66,12 +66,11 @@ typedef struct parametros_s {
 } * parametros_t;
 
 
-
 /* === Declaraciones de funciones internas ================================= */
 
 void Blinking(void * parameters);
 void BlinkingUntil(void * parameters);
-
+void EscaneoTeclas(void * parameters);
 /* === Definiciones de variables internas ================================== */
 
 board_t board;
@@ -101,6 +100,32 @@ void BlinkingUntil(void * parameters) {
 	}
 }
 
+void EscaneoTeclas(void * parameters){
+	TaskHandle_t tarea;
+
+	tarea=xTaskGetHandle("Rojo");
+
+	while (true){
+		vTaskDelay(pdMS_TO_TICKS(10));
+
+		if (DigitalInputGetState(board->boton_prueba)) {
+			DigitalOutputToggle(board->led_azul);
+			vTaskDelay(pdMS_TO_TICKS(250));
+		}
+
+		if (DigitalInputGetState(board->boton_cambiar)) {
+			vTaskSuspend(tarea);
+
+			vTaskDelay(pdMS_TO_TICKS(250));
+		}
+
+		if (DigitalInputGetState(board->boton_prender)) {
+			vTaskResume(tarea);
+
+			vTaskDelay(pdMS_TO_TICKS(250));
+		}
+	}
+}
 /* === Definiciones de funciones externas ================================== */
 
 /** @brief Función principal del programa
@@ -131,7 +156,7 @@ int main(void) {
 	xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
 	xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 1, NULL);
 	xTaskCreate(BlinkingUntil, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 1, NULL);
-
+	xTaskCreate( EscaneoTeclas, "Teclas", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 
 	/* Arranque del sistema operativo */
 	vTaskStartScheduler();
