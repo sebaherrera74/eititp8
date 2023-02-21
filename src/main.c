@@ -102,6 +102,7 @@ void BlinkingUntil(void * parameters) {
 
 void EscaneoTeclas(void * parameters){
 	TaskHandle_t tarea;
+	uint8_t contpulsos=0;
 
 	tarea=xTaskGetHandle("Rojo");
 
@@ -114,59 +115,63 @@ void EscaneoTeclas(void * parameters){
 		}
 
 		if (DigitalInputGetState(board->boton_cambiar)) {
-			vTaskSuspend(tarea);
+			contpulsos=contpulsos+1;
+			contpulsos=contpulsos%2;
 
-			vTaskDelay(pdMS_TO_TICKS(250));
-		}
 
-		if (DigitalInputGetState(board->boton_prender)) {
-			vTaskResume(tarea);
+			if (contpulsos==0){
+
+				vTaskSuspend(tarea);
+
+			}else {
+				vTaskResume(tarea);
+			}
 
 			vTaskDelay(pdMS_TO_TICKS(250));
 		}
 	}
 }
-/* === Definiciones de funciones externas ================================== */
+	/* === Definiciones de funciones externas ================================== */
 
-/** @brief Función principal del programa
- **
- ** @returns 0 La función nunca debería termina
- **
- ** @remarks En un sistema embebido la función main() nunca debe terminar.
- **          El valor de retorno 0 es para evitar un error en el compilador.
- */
-int main(void) {
+	/** @brief Función principal del programa
+	 **
+	 ** @returns 0 La función nunca debería termina
+	 **
+	 ** @remarks En un sistema embebido la función main() nunca debe terminar.
+	 **          El valor de retorno 0 es para evitar un error en el compilador.
+	 */
+	int main(void) {
 
-	/* Inicializaciones y configuraciones de dispositivos */
-	board = BoardCreate();
-
-
-	static struct parametros_s parametros[3];
-
-	parametros[0].led=board->led_rojo;
-	parametros[0].periodo=500;
-	parametros[1].led=board->led_verde;
-	parametros[1].periodo=750;
-	parametros[2].led=board->led_amarillo;
-	parametros[2].periodo=250;
+		/* Inicializaciones y configuraciones de dispositivos */
+		board = BoardCreate();
 
 
+		static struct parametros_s parametros[3];
 
-	/* Creación de las tareas */
-	xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate(BlinkingUntil, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate( EscaneoTeclas, "Teclas", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+		parametros[0].led=board->led_rojo;
+		parametros[0].periodo=500;
+		parametros[1].led=board->led_verde;
+		parametros[1].periodo=750;
+		parametros[2].led=board->led_amarillo;
+		parametros[2].periodo=250;
 
-	/* Arranque del sistema operativo */
-	vTaskStartScheduler();
 
-	/* vTaskStartScheduler solo retorna si se detiene el sistema operativo */
-	while (1) {
-	};
 
-	/* El valor de retorno es solo para evitar errores en el compilador*/
-	return 0;
-}
-/* === Ciere de documentacion ============================================== */
-/** @} Final de la definición del modulo para doxygen */
+		/* Creación de las tareas */
+		xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
+		xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 1, NULL);
+		xTaskCreate(BlinkingUntil, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 1, NULL);
+		xTaskCreate( EscaneoTeclas, "Teclas", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+
+		/* Arranque del sistema operativo */
+		vTaskStartScheduler();
+
+		/* vTaskStartScheduler solo retorna si se detiene el sistema operativo */
+		while (1) {
+		};
+
+		/* El valor de retorno es solo para evitar errores en el compilador*/
+		return 0;
+	}
+	/* === Ciere de documentacion ============================================== */
+	/** @} Final de la definición del modulo para doxygen */
