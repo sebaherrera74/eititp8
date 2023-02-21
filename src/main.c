@@ -70,6 +70,7 @@ typedef struct parametros_s {
 /* === Declaraciones de funciones internas ================================= */
 
 void Blinking(void * parameters);
+void BlinkingUntil(void * parameters);
 
 /* === Definiciones de variables internas ================================== */
 
@@ -88,6 +89,18 @@ void Blinking(void * parameters) {
 	}
 }
 
+void BlinkingUntil(void * parameters) {
+	parametros_t parametros =(parametros_t) parameters;
+
+	TickType_t ultimo_valor;
+
+	ultimo_valor=xTaskGetTickCount();
+	while (true) {
+		DigitalOutputToggle(parametros->led);
+		vTaskDelayUntil(&ultimo_valor,(pdMS_TO_TICKS(parametros->periodo)));
+	}
+}
+
 /* === Definiciones de funciones externas ================================== */
 
 /** @brief Función principal del programa
@@ -103,19 +116,23 @@ int main(void) {
 	board = BoardCreate();
 
 
-	static struct parametros_s parametros[2];
+	static struct parametros_s parametros[3];
 
 	parametros[0].led=board->led_rojo;
 	parametros[0].periodo=500;
 	parametros[1].led=board->led_verde;
 	parametros[1].periodo=750;
-
+	parametros[2].led=board->led_amarillo;
+	parametros[2].periodo=250;
 
 
 
 	/* Creación de las tareas */
 	xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
 	xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(BlinkingUntil, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 1, NULL);
+
+
 	/* Arranque del sistema operativo */
 	vTaskStartScheduler();
 
